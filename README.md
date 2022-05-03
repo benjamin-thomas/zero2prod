@@ -9,7 +9,7 @@ cargo clippy # catches more than `check`
 
 ## Auto-reload on code change
 
-Update he server
+Update the server
 ```bash
 # `check` and `clippy` are optional (the latter catches more stuff)
 cargo watch -x check -x clippy -x run
@@ -18,6 +18,12 @@ cargo watch -x check -x clippy -x run
 Re-run the client
 ```bash
 echo target/debug/zero2prod | entr http localhost:8000/
+```
+
+## Testing
+
+```bash
+cargo watch -x "check --lib --test health_test"
 ```
 
 ## Observe macro expansion

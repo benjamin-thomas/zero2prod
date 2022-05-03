@@ -1,8 +1,9 @@
+use tokio::spawn;
 use zero2prod::run;
 
 fn spawn_app() {
     let server = run().expect("Failed to bind address");
-    tokio::spawn(server);
+    spawn(server);
     return ();
 }
 
