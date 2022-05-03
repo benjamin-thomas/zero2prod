@@ -26,3 +26,16 @@ echo target/debug/zero2prod | entr http localhost:8000/
 cargo install cargo-expand
 cargo expand --color=always | less -RS
 ```
+
+## Add a dependency
+
+```bash
+cargo instl cargo-edit
+cargo add reqwest --dev
+```
+
+## Generate and open docs in the browser
+
+```bash
+cargo doc --open
+```
