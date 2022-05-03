@@ -30,7 +30,7 @@ cargo expand --color=always | less -RS
 ## Add a dependency
 
 ```bash
-cargo instl cargo-edit
+cargo install cargo-edit
 cargo add reqwest --dev
 ```
 
