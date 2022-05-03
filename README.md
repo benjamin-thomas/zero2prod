@@ -24,6 +24,7 @@ echo target/debug/zero2prod | entr http localhost:8000/
 
 ```bash
 cargo watch -x "check --lib --test health_test"
+cargo watch -x check -x clippy -x test
 ```
 
 ## Observe macro expansion

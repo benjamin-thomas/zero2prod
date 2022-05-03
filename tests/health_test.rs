@@ -1,20 +1,22 @@
-use tokio::spawn;
-use zero2prod::run;
+fn spawn_app() -> u16 {
+    let listener =
+        std::net::TcpListener::bind("localhost:0").expect("Failed to start listener (random port)");
 
-fn spawn_app() {
-    let server = run().expect("Failed to bind address");
-    spawn(server);
-    return ();
+    let port = listener.local_addr().unwrap().port();
+    let server = zero2prod::run(listener).expect("Failed to start server");
+
+    tokio::spawn(server);
+    return port;
 }
 
 #[tokio::test]
 async fn health_works() {
     // Arrange
-    spawn_app();
+    let port = spawn_app();
     let client = reqwest::Client::new();
 
     // Act
-    let url = "http://localhost:8000/health";
+    let url = format!("http://localhost:{}/health", port);
     let response = client.get(url).send().await.expect("GET request failed!");
 
     // Assert
