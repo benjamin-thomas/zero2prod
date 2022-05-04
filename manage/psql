@@ -1,3 +1,0 @@
-#!/bin/bash
-
-exec envdir .env.priv envdir .env.pub env psql

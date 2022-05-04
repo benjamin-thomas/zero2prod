@@ -58,3 +58,13 @@ cargo install sqlx-cli --no-default-features --features native-tls,postgres
 ./manage/sqlx migrate add -r create_subscriptions_table
 ./manage/sqlx migrate revert
 ```
+
+## Load environment variables for dev processes
+
+```bash
+./manage/with_env psql
+./manage/with_env env | grep ^PG
+
+# I loose color capability detection unfortunately
+./manage/with_env ls -l --color=always
+```

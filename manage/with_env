@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if ! [ -x "$(command -v "$1")" ]; then
+  echo "'$1' is not a program!"
+  exit 1
+fi
+
+exec envdir .env.priv envdir .env.pub "$@"
