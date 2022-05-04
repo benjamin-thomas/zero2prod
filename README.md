@@ -46,3 +46,15 @@ cargo add reqwest --dev
 ```bash
 cargo doc --open
 ```
+
+## Database migrations
+
+```bash
+# As documented here: https://crates.io/crates/sqlx-cli
+cargo install sqlx-cli --no-default-features --features native-tls,postgres
+
+# Create a first **reversible** migration.
+# sqlx won't allow mixing reversible and non-reversible migrations in the same project
+./manage/sqlx migrate add -r create_subscriptions_table
+./manage/sqlx migrate revert
+```
