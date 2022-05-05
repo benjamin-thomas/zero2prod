@@ -71,3 +71,11 @@ cargo install sqlx-cli --no-default-features --features native-tls,postgres
 ./manage/with_env cargo test
 ./manage/with_env cargo watch -x test
 ```
+
+## Testing
+
+Run a specific test
+```bash
+./manage/with_env cargo test valid_form_data
+./manage/with_env cargo test subscribe_returns_a_200_for_valid_form_data -- --exac
+```

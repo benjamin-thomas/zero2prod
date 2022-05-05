@@ -9,7 +9,7 @@ pub fn run(listener: TcpListener, pg_pool: PgPool) -> Result<Server, std::io::Er
     let pg_pool = web::Data::new(pg_pool);
 
     // Capture `connection` from the surrounding environment
-    let server = HttpServer::new( move || {
+    let server = HttpServer::new(move || {
         App::new()
             .route("/health", web::get().to(health_check))
             .route("/subscribe", web::post().to(subscribe))
