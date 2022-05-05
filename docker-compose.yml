@@ -3,10 +3,10 @@ version: '3.7' # https://docs.docker.com/compose/compose-file/compose-versioning
 services:
 
   # Initialize the DB container:
-  #   envdir .env.priv docker-compose up db
+  #   ./manage/with_env docker-compose up db
   #
   # Destroy all services and their related storage:
-  #   envdir .env.priv docker-compose down --volumes
+  #   ./manage/with_env docker-compose down --volumes
   db:
     image: postgres:12.9-alpine
     ports:

@@ -67,4 +67,7 @@ cargo install sqlx-cli --no-default-features --features native-tls,postgres
 
 # I loose color capability detection unfortunately
 ./manage/with_env ls -l --color=always
+
+./manage/with_env cargo test
+./manage/with_env cargo watch -x test
 ```
