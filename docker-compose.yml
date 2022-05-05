@@ -9,6 +9,7 @@ services:
   #   ./manage/with_env docker-compose down --volumes
   db:
     image: postgres:12.9-alpine
+    command: ["postgres", "-c", "log_statement=all", "-c", "log_destination=stderr"]
     ports:
       - '127.10.0.1:5432:5432' # 127.10.0.1      pg.zero2prod.test
     environment:
