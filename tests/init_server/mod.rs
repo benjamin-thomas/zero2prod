@@ -1,13 +1,19 @@
-async fn init_solo_pool() -> sqlx::Pool<sqlx::Postgres> {
-    let pool = sqlx::postgres::PgPoolOptions::new()
+use sqlx::postgres::PgPoolOptions;
+use sqlx::{PgPool, Pool, Postgres};
+use std::future::Future;
+use std::net::{SocketAddr, TcpListener};
+use zero2prod::{config, startup};
+
+async fn init_solo_pool() -> Pool<Postgres> {
+    let pool = PgPoolOptions::new()
         .max_connections(1)
-        .connect(&zero2prod::config::get_conn_string())
+        .connect(&config::get_conn_string())
         .await
         .expect("Could not init pg pool");
     pool
 }
 
-async fn init_solo_pool_and_tx_start() -> sqlx::Pool<sqlx::Postgres> {
+async fn init_solo_pool_and_tx_start() -> Pool<Postgres> {
     let pool = init_solo_pool().await;
 
     sqlx::query("BEGIN")
@@ -18,41 +24,41 @@ async fn init_solo_pool_and_tx_start() -> sqlx::Pool<sqlx::Postgres> {
     pool
 }
 
-async fn startup(with_tx: bool) -> (sqlx::PgPool, u16) {
+async fn startup(with_tx: bool) -> (PgPool, SocketAddr) {
     let pool = if with_tx {
         init_solo_pool_and_tx_start().await
     } else {
         init_solo_pool().await
     };
-    let listener = std::net::TcpListener::bind("localhost:0").expect("Failed to create listener");
-    let port = listener.local_addr().unwrap().port();
-    let server = zero2prod::startup::run(listener, pool.clone()).expect("Could not start server");
+    let listener = TcpListener::bind("localhost:0").expect("Failed to create listener");
+    let socket = listener.local_addr().unwrap();
+    let server = startup::run(listener, pool.clone()).expect("Could not start server");
 
     tokio::spawn(server);
 
-    (pool, port)
+    (pool, socket)
 }
 
-async fn rollback(pool: &sqlx::PgPool) {
+async fn rollback(pool: &PgPool) {
     sqlx::query("ROLLBACK")
         .execute(pool)
         .await
         .expect("ROLLBACK tx failed");
 }
 
-pub async fn with_tx<F>(test_body: fn(pool: sqlx::PgPool, port: u16) -> F)
+pub async fn with_tx<F>(test_body: fn(PgPool, SocketAddr) -> F)
 where
-    F: std::future::Future<Output = ()>,
+    F: Future<Output = ()>,
 {
-    let (pool, port) = startup(true).await;
-    test_body(pool.clone(), port).await;
+    let (pool, socket) = startup(true).await;
+    test_body(pool.clone(), socket).await;
     rollback(&pool).await;
 }
 
-pub async fn no_tx<F>(test_body: fn(pool: sqlx::PgPool, port: u16) -> F)
+pub async fn no_tx<F>(test_body: fn(PgPool, SocketAddr) -> F)
 where
-    F: std::future::Future<Output = ()>,
+    F: Future<Output = ()>,
 {
-    let (pool, port) = startup(true).await;
-    test_body(pool.clone(), port).await;
+    let (pool, socket) = startup(true).await;
+    test_body(pool.clone(), socket).await;
 }

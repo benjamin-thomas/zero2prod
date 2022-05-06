@@ -1,14 +1,17 @@
+use crate::utils::url_for;
+
 mod init_server;
+mod utils;
 
 #[tokio::test]
 async fn health_works() {
-    init_server::no_tx(|_pool, port| async move {
+    init_server::no_tx(|_pool, socket| async move {
         // Arrange
         let client = reqwest::Client::new();
 
         // Act
         let response = client
-            .get(format!("http://localhost:{}/health", port))
+            .get(url_for(socket, "/health"))
             .send()
             .await
             .expect("GET request failed!");
@@ -22,14 +25,14 @@ async fn health_works() {
 
 #[tokio::test]
 async fn subscribe_returns_a_200_for_valid_form_data() {
-    init_server::with_tx(|pool, port| async move {
+    init_server::with_tx(|pool, socket| async move {
         // Arrange
         let client = reqwest::Client::new();
 
         // Act
         let body = "name=John%20Doe&email=john.doe%40example.com";
         let response = client
-            .post(format!("http://localhost:{}/subscribe", port))
+            .post(url_for(socket, "/subscribe"))
             .header("Content-Type", "application/x-www-form-urlencoded")
             .body(body)
             .send()
@@ -51,7 +54,7 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
 
 #[tokio::test]
 async fn subscribe_returns_a_400_on_missing_data() {
-    init_server::with_tx(|_pool, port| async move {
+    init_server::with_tx(|_pool, socket| async move {
         // Arrange
         let client = reqwest::Client::new();
 
@@ -64,7 +67,7 @@ async fn subscribe_returns_a_400_on_missing_data() {
         for (body, hint) in cases {
             // Act
             let response = client
-                .post(format!("http://localhost:{}/subscribe", port))
+                .post(url_for(socket, "/subscribe"))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .body(body)
                 .send()
