@@ -4,7 +4,7 @@
 
 ```bash
 cargo check
-cargo clippy # catches more than `check` 
+cargo clippy # catches more than `check`
 ```
 
 ## Auto-reload on code change
@@ -12,7 +12,7 @@ cargo clippy # catches more than `check`
 Update the server
 ```bash
 # `check` and `clippy` are optional (the latter catches more stuff)
-cargo watch -x check -x clippy -x run
+cargo watch --clear -x check -x clippy -x run
 ```
 
 Re-run the client
@@ -78,4 +78,6 @@ Run a specific test
 ```bash
 ./manage/with_env cargo test valid_form_data
 ./manage/with_env cargo test subscribe_returns_a_200_for_valid_form_data -- --exac
+
+./manage/with_env cargo watch --clear -x 'test -- --nocapture'
 ```

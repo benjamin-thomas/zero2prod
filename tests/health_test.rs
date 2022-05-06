@@ -1,75 +1,35 @@
-use sqlx::{Connection, PgConnection, PgPool};
-use zero2prod::startup;
+mod init_server;
 
 #[tokio::test]
 async fn health_works() {
-    // Arrange
-    let pg_pool = get_pg_pool().await;
-    let base_url = spawn_app(pg_pool);
-    let client = reqwest::Client::new();
+    init_server::no_tx(|_pool, port| async move {
+        // Arrange
+        let client = reqwest::Client::new();
 
-    // Act
-    let response = client
-        .get(base_url + "/health")
-        .send()
-        .await
-        .expect("GET request failed!");
+        // Act
+        let response = client
+            .get(format!("http://localhost:{}/health", port))
+            .send()
+            .await
+            .expect("GET request failed!");
 
-    // Assert
-    assert!(response.status().is_success());
-    assert_eq!(Some(2), response.content_length()); // "UP"
+        // Assert
+        assert!(response.status().is_success());
+        assert_eq!(Some(2), response.content_length()); // "UP"
+    })
+    .await;
 }
 
 #[tokio::test]
 async fn subscribe_returns_a_200_for_valid_form_data() {
-    // Arrange
-    let pg_connection = get_pg_pool().await;
+    init_server::with_tx(|pool, port| async move {
+        // Arrange
+        let client = reqwest::Client::new();
 
-    let base_url = spawn_app(pg_connection);
-    let client = reqwest::Client::new();
-    let mut connection = PgConnection::connect(&zero2prod::config::get_conn_string())
-        .await
-        .expect("Could not connect to the database!");
-
-    // Act
-    let body = "name=John%20Doe&email=john.doe%40example.com"; // https://www.urlencoder.org
-    let response = client
-        .post(base_url + "/subscribe")
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .body(body)
-        .send()
-        .await
-        .expect("Failed to POST at /subscribe");
-
-    // Assert
-    assert_eq!(200, response.status().as_u16());
-    let saved = sqlx::query!("SELECT name, email FROM subscriptions")
-        .fetch_one(&mut connection)
-        .await
-        .expect("Could not fetch subscriptions");
-
-    assert_eq!("John Doe", saved.name);
-    assert_eq!("john.doe@example.com", saved.email);
-}
-
-#[tokio::test]
-async fn subscribe_returns_a_400_on_missing_data() {
-    // Arrange
-    let pg_connection = get_pg_pool().await;
-    let base_url = spawn_app(pg_connection);
-    let endpoint = base_url + "/subscribe";
-    let client = reqwest::Client::new();
-
-    let cases = vec![
-        ("name=John%20Doe", "missing email"),
-        ("email=john.doe%40example.com", "missing name"),
-        ("", "missing name and email"),
-    ];
-
-    for (body, hint) in cases {
         // Act
+        let body = "name=John%20Doe&email=john.doe%40example.com";
         let response = client
-            .post(&endpoint)
+            .post(format!("http://localhost:{}/subscribe", port))
             .header("Content-Type", "application/x-www-form-urlencoded")
             .body(body)
             .send()
@@ -77,28 +37,48 @@ async fn subscribe_returns_a_400_on_missing_data() {
             .expect("Failed to POST at /subscribe");
 
         // Assert
-        assert_eq!(
-            400,
-            response.status().as_u16(),
-            "Expected HTTP 400 error (hint: {})",
-            hint,
-        );
-    }
+        assert_eq!(200, response.status().as_u16());
+        let saved = sqlx::query!("SELECT name, email FROM subscriptions")
+            .fetch_one(&pool)
+            .await
+            .expect("Could not fetch subscriptions");
+
+        assert_eq!("John Doe", saved.name);
+        assert_eq!("john.doe@example.com", saved.email);
+    })
+    .await;
 }
 
-async fn get_pg_pool() -> PgPool {
-    PgPool::connect(&zero2prod::config::get_conn_string())
-        .await
-        .expect("Could not connect to the database!")
-}
+#[tokio::test]
+async fn subscribe_returns_a_400_on_missing_data() {
+    init_server::with_tx(|_pool, port| async move {
+        // Arrange
+        let client = reqwest::Client::new();
 
-fn spawn_app(pg_pool: PgPool) -> String {
-    let listener =
-        std::net::TcpListener::bind("localhost:0").expect("Failed to start listener (random port)");
+        let cases = vec![
+            ("name=John%20Doe", "missing email"),
+            ("email=john.doe%40example.com", "missing name"),
+            ("", "missing name and email"),
+        ];
 
-    let port = listener.local_addr().unwrap().port();
-    let server = startup::run(listener, pg_pool).expect("Failed to start server");
+        for (body, hint) in cases {
+            // Act
+            let response = client
+                .post(format!("http://localhost:{}/subscribe", port))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body(body)
+                .send()
+                .await
+                .expect("Failed to POST at /subscribe");
 
-    tokio::spawn(server);
-    return format!("http://localhost:{}", port);
+            // Assert
+            assert_eq!(
+                400,
+                response.status().as_u16(),
+                "Expected HTTP 400 error (hint: {})",
+                hint,
+            );
+        }
+    })
+    .await;
 }
