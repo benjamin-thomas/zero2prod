@@ -1,8 +1,9 @@
+use once_cell::sync::Lazy;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Pool, Postgres};
 use std::future::Future;
 use std::net::{SocketAddr, TcpListener};
-use zero2prod::{config, startup};
+use zero2prod::{config, startup, telemetry};
 
 async fn init_solo_pool() -> Pool<Postgres> {
     let pool = PgPoolOptions::new()
@@ -24,7 +25,16 @@ async fn init_solo_pool_and_tx_start() -> Pool<Postgres> {
     pool
 }
 
+// Ensure that the `tracing` stack is only initialized once using `once_cell`
+static TRACING: Lazy<()> = Lazy::new(|| {
+    telemetry::init();
+});
+
 async fn startup(with_tx: bool) -> (PgPool, SocketAddr) {
+    // The first time this function is invoked the code in `TRACING` is executed.
+    // All other invocations will instead skip execution.
+    Lazy::force(&TRACING);
+
     let pool = if with_tx {
         init_solo_pool_and_tx_start().await
     } else {

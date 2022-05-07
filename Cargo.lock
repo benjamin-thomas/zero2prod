@@ -2223,6 +2223,7 @@ name = "zero2prod"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "once_cell",
  "reqwest",
  "serde",
  "sqlx",
