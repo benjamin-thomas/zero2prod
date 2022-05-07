@@ -10,6 +10,7 @@ pub struct FormData {
 }
 
 // http --form POST localhost:8000/subscribe name=John email=john@example.com
+// while true;do http --form POST localhost:8000/subscribe name=John email=john-$(date +%s)@example.com;sleep 5;done
 pub async fn subscribe(form: Form<FormData>, connection: web::Data<PgPool>, request_id: RequestId) -> impl Responder {
     log::info!("[{request_id}] Saving subscriber (name={name}, email={email})", name=form.name, email=form.email, request_id=request_id);
     let res = sqlx::query!(

@@ -18,6 +18,7 @@ cargo watch --clear -x check -x clippy -x run
 Re-run the client
 ```bash
 echo target/debug/zero2prod | entr -c http localhost:8000/
+while true;do http --form POST localhost:8000/subscribe name=John email=john-$(date +%s)@example.com;sleep 5;done
 ```
 
 ## Testing
@@ -79,7 +80,7 @@ cargo install sqlx-cli --no-default-features --features native-tls,postgres
 Run a specific test
 ```bash
 ./manage/with_env cargo test valid_form_data
-./manage/with_env cargo test subscribe_returns_a_200_for_valid_form_data -- --exac
+./manage/with_env cargo test subscribe_returns_a_200_for_valid_form_data -- --exact
 
 ./manage/with_env cargo watch --clear -x 'test -- --nocapture'
 ```
