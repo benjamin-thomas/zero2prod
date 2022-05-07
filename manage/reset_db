@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e
+
+echo -n "--> Killing connected clients... "
+PGDATABASE=postgres ./manage/with_env psql -q -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE backend_type = 'client backend' AND pid <> pg_backend_pid();" >/dev/null
+echo "OK!"
+
+echo -n "--> Recreating the database..."
+PGDATABASE=postgres ./manage/with_env psql -q --set=ON_ERROR_STOP=1 -c 'DROP DATABASE newsletter' -c 'CREATE DATABASE newsletter'
+echo "OK!"
+
+echo
+./manage/with_env sqlx migrate run

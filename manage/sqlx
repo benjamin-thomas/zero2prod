@@ -1,3 +1,0 @@
-#!/bin/bash
-
-exec envdir .env.priv envdir .env.pub env bash -c "DATABASE_URL=postgres://\${PGUSER}:\${PGPASSWORD}@\${PGHOST}:5432/\${PGDATABASE} sqlx $*"

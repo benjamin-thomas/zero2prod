@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -e
+
+./manage/reset_db
+./manage/with_env cargo test
