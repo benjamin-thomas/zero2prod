@@ -27,7 +27,7 @@ async fn init_solo_pool_and_tx_start() -> Pool<Postgres> {
 
 // Ensure that the `tracing` stack is only initialized once using `once_cell`
 static TRACING: Lazy<()> = Lazy::new(|| {
-    telemetry::init();
+    telemetry::init("test");
 });
 
 async fn startup(with_tx: bool) -> (PgPool, SocketAddr) {

@@ -3,7 +3,7 @@ use zero2prod::{run, telemetry};
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    telemetry::init();
+    telemetry::init("zero2prod");
 
     let listener = std::net::TcpListener::bind("localhost:8000").expect("Could not bind port 8000");
     let addr = listener.local_addr().unwrap();

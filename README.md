@@ -13,6 +13,11 @@ Update the server
 ```bash
 # `check` and `clippy` are optional (the latter catches more stuff)
 cargo watch --clear -x check -x clippy -x run
+LOG=1 ./manage/with_env cargo watch --clear -x run
+
+# cargo install bunyan
+LOG=1 ./manage/with_env cargo run | bunyan
+LOG=1 ./manage/with_env cargo watch --clear -x run | bunyan
 ```
 
 Re-run the client
@@ -28,6 +33,9 @@ cargo watch -x "check --lib --test health_test"
 cargo watch -x check -x clippy -x test
 ./manage/with_env cargo watch --clear -x test
 ./manage/with_env cargo watch --clear -x 'test -- --nocapture'
+
+# cargo install bunyan
+LOG=1 ./manage/with_env cargo test | bunyan
 ```
 
 ## Observe macro expansion
