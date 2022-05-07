@@ -10,6 +10,7 @@ pub struct FormData {
 
 // http --form POST localhost:8000/subscribe name=John email=john@example.com
 pub async fn subscribe(form: Form<FormData>, connection: web::Data<PgPool>) -> impl Responder {
+    log::info!("Saving subscriber (name={name}, email={email})", name=form.name, email=form.email);
     let res = sqlx::query!(
         r#"
         INSERT INTO subscriptions (email, name, subscribed_at)
@@ -24,9 +25,12 @@ pub async fn subscribe(form: Form<FormData>, connection: web::Data<PgPool>) -> i
     .await;
 
     match res {
-        Ok(_) => HttpResponse::Ok(),
+        Ok(_) => {
+            log::info!("Subscription saved successfully");
+            HttpResponse::Ok()
+        },
         Err(e) => {
-            println!("--> Query execution failed: '{}'", e);
+            log::error!("Query execution failed: '{:?}'", e);
             HttpResponse::InternalServerError()
         }
     }
