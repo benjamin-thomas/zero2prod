@@ -21,6 +21,7 @@ sqlx = { version = "0.5.13", features = [
     "chrono",
     "migrate",
 ] }
+env_logger = "0.9.0"
 
 [dev-dependencies]
 reqwest = "0.11.10"
