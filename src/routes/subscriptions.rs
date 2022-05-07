@@ -1,8 +1,7 @@
-use actix_web::web::Form;
+use actix_web::web::{Form};
 use actix_web::{web, HttpResponse, Responder};
 use sqlx::PgPool;
 use uuid::Uuid;
-use tracing::Instrument;
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
@@ -12,13 +11,25 @@ pub struct FormData {
 
 // http --form POST localhost:8000/subscribe name=John email=john@example.com
 // while true;do http --form POST localhost:8000/subscribe name=John email=john-$(date +%s)@example.com;sleep 5;done
+#[tracing::instrument(
+    name = "Register a new subscriber", // defaults to function name
+    skip(form, pool),
+    fields(
+        request_id = %Uuid::new_v4(),
+        user_name = %form.name,
+        %form.email,
+    )
+)]
 pub async fn subscribe(form: Form<FormData>, pool: web::Data<PgPool>) -> impl Responder {
-    let request_id = Uuid::new_v4();
-    let req_span = tracing::info_span!("Adding a new subscriber", %request_id, %form.name, sub_email = %form.email, f = ?form.name);
-    let _req_span_guard = req_span.enter();
+    match insert_subscriber(pool.get_ref(), &form).await {
+        Ok(_) => HttpResponse::Ok(),
+        Err(_) => HttpResponse::InternalServerError(),
+    }
+}
 
-    let query_span = tracing::info_span!("Saving the new subscriber");
-    let res = sqlx::query!(
+#[tracing::instrument(skip(form, pool))]
+async fn insert_subscriber(pool: &PgPool, form: &FormData) -> Result<(), sqlx::Error> {
+    sqlx::query!(
         r#"
         INSERT INTO subscriptions (email, name, subscribed_at)
         VALUES ($1, $2, now())
@@ -28,18 +39,12 @@ pub async fn subscribe(form: Form<FormData>, pool: web::Data<PgPool>) -> impl Re
     )
     // We use `get_ref` to get an immutable reference to the `PgConnection`
     // wrapped by `web::Data`.
-    .execute(pool.get_ref())
-    .instrument(query_span)
-    .await;
+    .execute(pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Query execution failed: '{:?}'", e);
+        e
+    })?; // `?` operator returns the error early
 
-    match res {
-        Ok(_) => {
-            tracing::info!("Subscription saved successfully");
-            HttpResponse::Ok()
-        },
-        Err(e) => {
-            tracing::error!("Query execution failed: '{:?}'", e);
-            HttpResponse::InternalServerError()
-        }
-    }
+    Ok(())
 }
