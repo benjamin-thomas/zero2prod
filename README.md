@@ -84,3 +84,10 @@ Run a specific test
 
 ./manage/with_env cargo watch --clear -x 'test -- --nocapture'
 ```
+
+## Find unused dependencies
+
+```bash
+cargo install cargo-udeps
+cargo +nightly udeps
+```
