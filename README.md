@@ -17,7 +17,7 @@ cargo watch --clear -x check -x clippy -x run
 
 Re-run the client
 ```bash
-echo target/debug/zero2prod | entr http localhost:8000/
+echo target/debug/zero2prod | entr -c http localhost:8000/
 ```
 
 ## Testing
@@ -25,6 +25,8 @@ echo target/debug/zero2prod | entr http localhost:8000/
 ```bash
 cargo watch -x "check --lib --test health_test"
 cargo watch -x check -x clippy -x test
+./manage/with_env cargo watch --clear -x test
+./manage/with_env cargo watch --clear -x 'test -- --nocapture'
 ```
 
 ## Observe macro expansion

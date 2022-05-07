@@ -1,6 +1,7 @@
 use actix_web::web::Form;
 use actix_web::{web, HttpResponse, Responder};
 use sqlx::PgPool;
+use tracing_actix_web::RequestId;
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
@@ -9,8 +10,8 @@ pub struct FormData {
 }
 
 // http --form POST localhost:8000/subscribe name=John email=john@example.com
-pub async fn subscribe(form: Form<FormData>, connection: web::Data<PgPool>) -> impl Responder {
-    log::info!("Saving subscriber (name={name}, email={email})", name=form.name, email=form.email);
+pub async fn subscribe(form: Form<FormData>, connection: web::Data<PgPool>, request_id: RequestId) -> impl Responder {
+    log::info!("[{request_id}] Saving subscriber (name={name}, email={email})", name=form.name, email=form.email, request_id=request_id);
     let res = sqlx::query!(
         r#"
         INSERT INTO subscriptions (email, name, subscribed_at)
@@ -26,11 +27,11 @@ pub async fn subscribe(form: Form<FormData>, connection: web::Data<PgPool>) -> i
 
     match res {
         Ok(_) => {
-            log::info!("Subscription saved successfully");
+            log::info!("[{}] Subscription saved successfully", request_id);
             HttpResponse::Ok()
         },
         Err(e) => {
-            log::error!("Query execution failed: '{:?}'", e);
+            log::error!("[{}] Query execution failed: '{:?}'", request_id, e);
             HttpResponse::InternalServerError()
         }
     }
