@@ -2,6 +2,22 @@ version: '3.7' # https://docs.docker.com/compose/compose-file/compose-versioning
 
 services:
 
+  # Test with:
+  #   ./manage/with_env docker-compose up prod-test
+  #   http 127.10.0.2:8080/health
+  prod-test:
+    image: local/zero2prod
+    environment:
+      PGUSER: ${PGUSER:?mandatory}
+      PGPASSWORD: ${PGPASSWORD:?mandatory}
+      PGHOST: "db"
+      PGDATABASE: ${PGDATABASE:?mandatory}
+      BIND: 0.0.0.0:8080
+    ports:
+      - '127.10.0.2:8080:8080'
+    depends_on:
+      - db
+
   # Initialize the DB container:
   #   ./manage/with_env docker-compose up db
   #

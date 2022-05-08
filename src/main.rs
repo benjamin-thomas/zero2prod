@@ -5,7 +5,11 @@ use zero2prod::{run, telemetry};
 async fn main() -> std::io::Result<()> {
     telemetry::init("zero2prod");
 
-    let listener = std::net::TcpListener::bind("localhost:8000").expect("Could not bind port 8000");
+    let bind = zero2prod::config::must_env("BIND");
+
+    let listener =
+        std::net::TcpListener::bind(&bind).unwrap_or_else(|_| panic!("Could not bind to: {}", bind));
+
     let addr = listener.local_addr().unwrap();
 
     let pg_pool = PgPool::connect(&zero2prod::config::get_conn_string())
