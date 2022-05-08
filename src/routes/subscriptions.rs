@@ -1,7 +1,6 @@
 use actix_web::web::{Form};
 use actix_web::{web, HttpResponse, Responder};
 use sqlx::PgPool;
-use uuid::Uuid;
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
@@ -9,13 +8,12 @@ pub struct FormData {
     email: String,
 }
 
-// http --form POST localhost:8000/subscribe name=John email=john@example.com
+// http --form POST localhost:8000/subscribe name=Robert email=bob@example.com
 // while true;do http --form POST localhost:8000/subscribe name=John email=john-$(date +%s)@example.com;sleep 5;done
 #[tracing::instrument(
     name = "Register a new subscriber", // defaults to function name
     skip(form, pool),
     fields(
-        request_id = %Uuid::new_v4(),
         user_name = %form.name,
         %form.email,
     )

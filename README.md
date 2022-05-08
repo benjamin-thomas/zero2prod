@@ -24,7 +24,7 @@ Update the server
 ```bash
 # `check` and `clippy` are optional (the latter catches more stuff)
 cargo watch --clear -x check -x clippy -x run
-LOG=1 ./manage/with_env cargo watch --clear -x run
+LOG=1 ./manage/with_env cargo watch --clear -x run | bunyan
 
 # cargo install bunyan
 LOG=1 ./manage/with_env cargo run | bunyan
@@ -42,6 +42,7 @@ while true;do http --form POST localhost:8000/subscribe name=John email=john-$(d
 ```bash
 # This incantation will update the current tmux pane green/red
 cargo watch -- bash -c './manage/with_env cargo test;./manage/tmux_warn $?'
+LOG=1 cargo watch --clear -- bash -c './manage/with_env cargo test;./manage/tmux_warn $?' | bunyan
 
 # Env vars can be loaded from any of those two processes
 LOG=1 cargo watch -- ./manage/with_env cargo test
