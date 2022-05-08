@@ -1,0 +1,17 @@
+#!/bin/bash -x
+
+set -e
+[ -z $TMUX ] && exit 0
+
+# Fetching $? from the previous process turned out to be to problematic,
+# so I pass it as an argument instead
+EXIT_CODE=$1
+
+change_bg() {
+    tmux set status-left-style bg=$1
+}
+
+[ $EXIT_CODE -eq 0 ] && change_bg green && exit 0
+
+change_bg red
+exit $EXIT_CODE

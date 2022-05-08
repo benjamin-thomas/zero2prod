@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 if ! [ -x "$(command -v "$1")" ]; then
   echo "'$1' is not a program!"
   exit 1
@@ -13,4 +15,4 @@ set +a
 # Required by sqlx
 export DATABASE_URL="postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:5432/${PGDATABASE}"
 
-"$@"
+exec "$@"
