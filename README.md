@@ -1,5 +1,16 @@
 # Following along the zero2prod book
 
+## Git hook setup
+
+Hook is at: `.git/hooks/pre-push`
+```bash
+#!/bin/bash
+
+set -e
+
+./manage/run_tests
+```
+
 ## Catch errors
 
 ```bash
