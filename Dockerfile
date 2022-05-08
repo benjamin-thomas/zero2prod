@@ -1,3 +1,6 @@
+# To debug:
+#   - FROM gcr.io/distroless/cc:debug
+#   - docker run -u root --entrypoint=/busybox/sh --rm -it local/zero2prod
 FROM gcr.io/distroless/cc
 
 USER nobody
