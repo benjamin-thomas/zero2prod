@@ -46,7 +46,7 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
             .await
             .expect("Could not fetch subscriptions");
 
-        assert_eq!("John D", saved.name);
+        assert_eq!("John Doe", saved.name);
         assert_eq!("john.doe@example.com", saved.email);
     })
     .await;
