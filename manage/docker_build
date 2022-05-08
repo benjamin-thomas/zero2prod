@@ -1,0 +1,7 @@
+#!/bin/bash -xe
+
+./manage/with_env cargo build --release
+
+docker build --tag local/zero2prod .
+
+docker image ls local/zero2prod
