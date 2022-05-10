@@ -53,7 +53,7 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
 }
 
 #[tokio::test]
-async fn subscribe_returns_a_400_on_missing_data() {
+async fn subscribe_returns_a_400_on_bad_data_data() {
     init_server::with_tx(|_pool, socket| async move {
         // Arrange
         let client = reqwest::Client::new();
@@ -62,6 +62,9 @@ async fn subscribe_returns_a_400_on_missing_data() {
             ("name=John%20Doe", "missing email"),
             ("email=john.doe%40example.com", "missing name"),
             ("", "missing name and email"),
+            ("name=&email=john.doe%40example.com", "empty name"),
+            ("name=John&email=", "empty email"),
+            ("name=John&email=bogus-email", "invalid email"),
         ];
 
         for (body, hint) in cases {

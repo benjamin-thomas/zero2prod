@@ -1,5 +1,17 @@
 # Following along the zero2prod book
 
+## Better IntelliJ/Clio support
+
+Follow this issue: https://github.com/intellij-rust/intellij-rust/issues/6908
+
+For the time being, activate the *experimental* features, as documented.
+
+Then start with the env vars loaded:
+
+```bash
+./manage/with_env clion .
+```
+
 ## Git hook setup
 
 Hook is at: `.git/hooks/pre-push`
