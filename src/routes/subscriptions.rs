@@ -11,11 +11,15 @@ pub struct FormData {
     email: String,
 }
 
-pub fn parse_subscriber(data: FormData) -> Result<NewSubscriber, String> {
-    let name = SubscriberName::parse(data.name)?;
-    let email = SubscriberEmail::parse(data.email)?;
+impl TryFrom<FormData> for NewSubscriber {
+    type Error = String;
 
-    Ok(NewSubscriber { email, name })
+    fn try_from(value: FormData) -> Result<Self, Self::Error> {
+        let name = SubscriberName::parse(value.name)?;
+        let email = SubscriberEmail::parse(value.email)?;
+
+        Ok(Self { email, name })
+    }
 }
 
 // http --form POST localhost:8000/subscribe name=Robert email=bob@example.com
@@ -30,7 +34,9 @@ pub fn parse_subscriber(data: FormData) -> Result<NewSubscriber, String> {
 )]
 pub async fn subscribe(form: Form<FormData>, pool: web::Data<PgPool>) -> impl Responder {
     // form.0 refers to the underlying FormData
-    let new_subscriber = match parse_subscriber(form.0) {
+    let result = NewSubscriber::try_from(form.0); // same as: `form.0.try_into();`
+
+    let new_subscriber = match result {
         Ok(new_subscriber) => new_subscriber,
         Err(_) => return HttpResponse::BadRequest(),
     };
