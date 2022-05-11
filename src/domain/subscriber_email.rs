@@ -1,8 +1,8 @@
 #[derive(Debug)]
-pub struct SubscriberEmail(String);
+pub(crate) struct SubscriberEmail(String);
 
 impl SubscriberEmail {
-    pub fn parse(s: String) -> Result<SubscriberEmail, String> {
+    pub(crate) fn parse(s: String) -> Result<SubscriberEmail, String> {
         if validator::validate_email(&s) {
             Ok(Self(s))
         } else {

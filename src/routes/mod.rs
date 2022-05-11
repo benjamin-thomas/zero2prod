@@ -1,5 +1,5 @@
 mod health;
 mod subscriptions;
 
-pub use health::*;
-pub use subscriptions::*;
+pub(crate) use health::*;
+pub(crate) use subscriptions::*;

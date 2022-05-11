@@ -1,5 +1,5 @@
 use actix_web::{HttpResponse, Responder};
 
-pub async fn health_check() -> impl Responder {
+pub(crate) async fn health_check() -> impl Responder {
     HttpResponse::Ok().body("UP")
 }

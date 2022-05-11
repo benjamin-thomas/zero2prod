@@ -6,7 +6,7 @@ use actix_web::{web, HttpResponse, Responder};
 use sqlx::PgPool;
 
 #[derive(serde::Deserialize)]
-pub struct FormData {
+pub(crate) struct FormData {
     name: String,
     email: String,
 }
@@ -32,7 +32,7 @@ impl TryFrom<FormData> for NewSubscriber {
         %form.email,
     )
 )]
-pub async fn subscribe(form: Form<FormData>, pool: web::Data<PgPool>) -> impl Responder {
+pub(crate) async fn subscribe(form: Form<FormData>, pool: web::Data<PgPool>) -> impl Responder {
     // form.0 refers to the underlying FormData
     let result = NewSubscriber::try_from(form.0); // same as: `form.0.try_into();`
 

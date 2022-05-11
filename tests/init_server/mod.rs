@@ -56,7 +56,7 @@ async fn rollback(pool: &PgPool) {
         .expect("ROLLBACK tx failed");
 }
 
-pub async fn with_tx<F>(test_body: fn(PgPool, SocketAddr) -> F)
+pub(crate) async fn with_tx<F>(test_body: fn(PgPool, SocketAddr) -> F)
 where
     F: Future<Output = ()>,
 {
@@ -65,7 +65,7 @@ where
     rollback(&pool).await;
 }
 
-pub async fn no_tx<F>(test_body: fn(PgPool, SocketAddr) -> F)
+pub(crate) async fn no_tx<F>(test_body: fn(PgPool, SocketAddr) -> F)
 where
     F: Future<Output = ()>,
 {

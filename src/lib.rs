@@ -2,9 +2,9 @@ extern crate core;
 
 pub mod config;
 
-pub mod domain;
+pub(crate) mod domain;
 
-pub mod routes;
+pub(crate) mod routes;
 pub mod startup;
 pub mod telemetry;
 

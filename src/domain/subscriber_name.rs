@@ -1,10 +1,10 @@
 use unicode_segmentation::UnicodeSegmentation;
 
 #[derive(Debug)]
-pub struct SubscriberName(String);
+pub(crate) struct SubscriberName(String);
 
 impl SubscriberName {
-    pub fn parse(s: String) -> Result<SubscriberName, String> {
+    pub(crate) fn parse(s: String) -> Result<SubscriberName, String> {
         let is_empty = s.trim().is_empty();
         let is_too_long = s.graphemes(true).count() > 255;
         let forbidden = ['/', '(', ')', '"', '<', '>', '\\', '{', '}'];
