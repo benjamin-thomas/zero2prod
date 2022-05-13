@@ -1,8 +1,12 @@
+mod health;
+mod subscribe;
+
 use once_cell::sync::Lazy;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Pool, Postgres};
 use std::future::Future;
 use std::net::{SocketAddr, TcpListener};
+use zero2prod::email_client::EmailClient;
 use zero2prod::{config, startup, telemetry};
 
 async fn init_solo_pool() -> Pool<Postgres> {
@@ -42,7 +46,11 @@ async fn startup(with_tx: bool) -> (PgPool, SocketAddr) {
     };
     let listener = TcpListener::bind("localhost:0").expect("Failed to create listener");
     let socket = listener.local_addr().unwrap();
-    let server = startup::run(listener, pool.clone()).expect("Could not start server");
+
+    let email_client = EmailClient::new("localhost".to_string(), "test@example.com".to_string())
+        .expect("EmailClient init failed");
+    let server =
+        startup::run(listener, pool.clone(), email_client).expect("Could not start server");
 
     tokio::spawn(server);
 
@@ -71,4 +79,9 @@ where
 {
     let (pool, socket) = startup(true).await;
     test_body(pool.clone(), socket).await;
+}
+
+//noinspection HttpUrlsUsage
+pub(crate) fn url_for(socket: SocketAddr, path: &str) -> String {
+    format!("http://{}{}", socket, path)
 }
