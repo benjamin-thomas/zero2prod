@@ -80,11 +80,9 @@ impl Queue for PostgresQueue {
     async fn push(&self, job: Message) -> Result<(), sqlx::Error> {
         let message = Json(job);
         let status = PostgresJobStatus::Queued;
-        let query = "INSERT INTO queue (status, message) VALUES ($1, $2)";
 
-        sqlx::query(query)
-            .bind(status)
-            .bind(message)
+        // Not sure why I have to double cast
+        sqlx::query!(r#"INSERT INTO queue (status, message) VALUES ($1, $2)"#, status as PostgresJobStatus, message as Json<Message>)
             .execute(&self.pool)
             .await?;
 
