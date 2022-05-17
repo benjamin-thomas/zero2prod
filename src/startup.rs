@@ -1,4 +1,4 @@
-use crate::background_jobs::PostgresQueue;
+use crate::background_jobs::pg_queue::PgQueue;
 use crate::email_client::EmailClient;
 use crate::routes::{health_check, subscribe};
 use actix_web::dev::Server;
@@ -10,12 +10,12 @@ use tracing_actix_web::TracingLogger;
 pub fn run(
     listener: TcpListener,
     pg_pool: PgPool,
-    queue: PostgresQueue,
+    pg_queue: PgQueue,
     email_client: EmailClient,
 ) -> Result<Server, std::io::Error> {
     // Wrap the connection in a smart pointer
     let pg_pool = web::Data::new(pg_pool);
-    let queue = web::Data::new(queue);
+    let queue = web::Data::new(pg_queue);
     let email_client = web::Data::new(email_client);
 
     // Capture `connection` from the surrounding environment

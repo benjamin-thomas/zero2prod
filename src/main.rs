@@ -1,5 +1,5 @@
 use sqlx::PgPool;
-use zero2prod::background_jobs::PostgresQueue;
+use zero2prod::background_jobs::pg_queue::PgQueue;
 use zero2prod::email_client::EmailClient;
 use zero2prod::{run, telemetry};
 
@@ -22,8 +22,8 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Could not connect to the database!");
 
-    let queue = PostgresQueue::new(pg_pool.clone());
+    let pg_queue = PgQueue::new(pg_pool.clone());
 
     println!("\n--> Starting server on: \x1b[1;34m{}\x1b[1;m", addr);
-    return run(listener, pg_pool, queue, email_client)?.await;
+    return run(listener, pg_pool, pg_queue, email_client)?.await;
 }

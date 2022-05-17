@@ -1,4 +1,5 @@
-use crate::background_jobs::{Message, PostgresQueue, Queue};
+use crate::background_jobs::Queue;
+use crate::background_jobs::{pg_queue::PgQueue, Message};
 use crate::domain::new_subscriber::NewSubscriber;
 use crate::domain::subscriber_email::SubscriberEmail;
 use crate::domain::subscriber_name::SubscriberName;
@@ -36,7 +37,7 @@ impl TryFrom<FormData> for NewSubscriber {
 pub(crate) async fn subscribe(
     form: Form<FormData>,
     pool: web::Data<PgPool>,
-    queue: web::Data<PostgresQueue>,
+    queue: web::Data<PgQueue>,
 ) -> impl Responder {
     // form.0 refers to the underlying FormData
     let result = NewSubscriber::try_from(form.0); // same as: `form.0.try_into();`
@@ -55,7 +56,7 @@ pub(crate) async fn subscribe(
 #[tracing::instrument(skip(pool, queue, new_subscriber))]
 async fn insert_subscriber(
     pool: &PgPool,
-    queue: &PostgresQueue,
+    queue: &PgQueue,
     new_subscriber: NewSubscriber,
 ) -> Result<(), sqlx::Error> {
     sqlx::query!(
