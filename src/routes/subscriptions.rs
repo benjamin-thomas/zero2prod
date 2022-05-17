@@ -27,7 +27,7 @@ impl TryFrom<FormData> for NewSubscriber {
 // while true;do http --form POST localhost:8080/subscribe name=John email=john-$(date +%s)@example.com;sleep 5;done
 #[tracing::instrument(
     name = "Register a new subscriber", // defaults to function name
-    skip(form, pool),
+    skip(form, pool, queue),
     fields(
         user_name = %form.name,
         %form.email,
@@ -52,7 +52,7 @@ pub(crate) async fn subscribe(
     }
 }
 
-#[tracing::instrument(skip(pool, new_subscriber))]
+#[tracing::instrument(skip(pool, queue, new_subscriber))]
 async fn insert_subscriber(
     pool: &PgPool,
     queue: &PostgresQueue,

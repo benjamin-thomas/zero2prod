@@ -53,7 +53,8 @@ async fn startup(with_tx: bool) -> (PgPool, SocketAddr) {
 
     let email_client = EmailClient::new("localhost".to_string(), "test@example.com".to_string())
         .expect("EmailClient init failed");
-    let server = startup::run(listener, pool.clone(), queue.clone(), email_client)
+
+    let server = startup::run(listener, pool.clone(), queue, email_client)
         .expect("Could not start server");
 
     tokio::spawn(server);
