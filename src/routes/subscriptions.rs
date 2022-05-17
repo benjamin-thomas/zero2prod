@@ -1,3 +1,4 @@
+use crate::background_jobs::{Message, PostgresQueue, Queue};
 use crate::domain::new_subscriber::NewSubscriber;
 use crate::domain::subscriber_email::SubscriberEmail;
 use crate::domain::subscriber_name::SubscriberName;
@@ -22,8 +23,8 @@ impl TryFrom<FormData> for NewSubscriber {
     }
 }
 
-// http --form POST localhost:8000/subscribe name=Robert email=bob@example.com
-// while true;do http --form POST localhost:8000/subscribe name=John email=john-$(date +%s)@example.com;sleep 5;done
+// http --form POST localhost:8080/subscribe name=Robert email=bob@example.com
+// while true;do http --form POST localhost:8080/subscribe name=John email=john-$(date +%s)@example.com;sleep 5;done
 #[tracing::instrument(
     name = "Register a new subscriber", // defaults to function name
     skip(form, pool),
@@ -32,7 +33,11 @@ impl TryFrom<FormData> for NewSubscriber {
         %form.email,
     )
 )]
-pub(crate) async fn subscribe(form: Form<FormData>, pool: web::Data<PgPool>) -> impl Responder {
+pub(crate) async fn subscribe(
+    form: Form<FormData>,
+    pool: web::Data<PgPool>,
+    queue: web::Data<PostgresQueue>,
+) -> impl Responder {
     // form.0 refers to the underlying FormData
     let result = NewSubscriber::try_from(form.0); // same as: `form.0.try_into();`
 
@@ -41,7 +46,7 @@ pub(crate) async fn subscribe(form: Form<FormData>, pool: web::Data<PgPool>) -> 
         Err(_) => return HttpResponse::BadRequest(),
     };
 
-    match insert_subscriber(&pool.get_ref(), new_subscriber).await {
+    match insert_subscriber(&pool.get_ref(), &queue.get_ref(), new_subscriber).await {
         Ok(_) => HttpResponse::Ok(),
         Err(_) => HttpResponse::InternalServerError(),
     }
@@ -50,6 +55,7 @@ pub(crate) async fn subscribe(form: Form<FormData>, pool: web::Data<PgPool>) -> 
 #[tracing::instrument(skip(pool, new_subscriber))]
 async fn insert_subscriber(
     pool: &PgPool,
+    queue: &PostgresQueue,
     new_subscriber: NewSubscriber,
 ) -> Result<(), sqlx::Error> {
     sqlx::query!(
@@ -69,6 +75,12 @@ async fn insert_subscriber(
         tracing::error!("Query execution failed: '{:?}'", e);
         e
     })?; // `?` operator returns the error early
+
+    let job = Message::SendConfirmEmail {
+        email: String::from(new_subscriber.email.as_ref()),
+    };
+
+    queue.push(job).await?;
 
     Ok(())
 }

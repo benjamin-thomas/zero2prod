@@ -1,0 +1,6 @@
+CREATE TABLE queue
+(
+    id BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY,
+    status INT NOT NULL,
+    message JSONB NOT NULL
+)

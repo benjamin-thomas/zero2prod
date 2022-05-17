@@ -6,6 +6,7 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Pool, Postgres};
 use std::future::Future;
 use std::net::{SocketAddr, TcpListener};
+use zero2prod::background_jobs::PostgresQueue;
 use zero2prod::email_client::EmailClient;
 use zero2prod::{config, startup, telemetry};
 
@@ -44,13 +45,16 @@ async fn startup(with_tx: bool) -> (PgPool, SocketAddr) {
     } else {
         init_solo_pool().await
     };
+
+    let queue = PostgresQueue::new(pool.clone());
+
     let listener = TcpListener::bind("localhost:0").expect("Failed to create listener");
     let socket = listener.local_addr().unwrap();
 
     let email_client = EmailClient::new("localhost".to_string(), "test@example.com".to_string())
         .expect("EmailClient init failed");
-    let server =
-        startup::run(listener, pool.clone(), email_client).expect("Could not start server");
+    let server = startup::run(listener, pool.clone(), queue.clone(), email_client)
+        .expect("Could not start server");
 
     tokio::spawn(server);
 

@@ -15,6 +15,7 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
             .expect("Failed to POST at /subscribe");
 
         // Assert
+        // User is saved to the database
         assert_eq!(200, response.status().as_u16());
         let saved = sqlx::query!("SELECT name, email FROM subscriptions")
             .fetch_one(&pool)
@@ -23,6 +24,19 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
 
         assert_eq!("John Doe", saved.name);
         assert_eq!("john.doe@example.com", saved.email);
+
+        // Will send an email later via a background job
+        let row = sqlx::query!(
+            r#"
+            SELECT COUNT(*)
+            FROM queue WHERE status = 0
+            AND message->'SendConfirmEmail'->>'email' = 'john.doe@example.com';
+            "#,
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("Failed to fetch queue count");
+        assert_eq!(1, row.count.unwrap());
     })
     .await;
 }

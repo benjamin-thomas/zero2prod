@@ -16,10 +16,10 @@ impl EmailClient {
 
     pub async fn send_email(
         &self,
-        recipient: SubscriberEmail,
-        subject: &str,
-        html_content: &str,
-        text_content: &str,
+        _recipient: SubscriberEmail,
+        _subject: &str,
+        _html_content: &str,
+        _text_content: &str,
     ) -> Result<(), String> {
         todo!()
     }
