@@ -55,7 +55,7 @@ impl Queue for PostgresQueue {
         let message = Json(job);
         let status = PostgresJobStatus::Queued;
 
-        // Not sure why I have to double cast
+        // Not sure why I have to cast to the type I already have
         sqlx::query!(
             r#"INSERT INTO queue (status, message) VALUES ($1, $2)"#,
             status as PostgresJobStatus,
