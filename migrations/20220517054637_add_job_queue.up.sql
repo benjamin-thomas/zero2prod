@@ -1,6 +1,7 @@
+CREATE TYPE QUEUE_STATUS AS ENUM ('Queued', 'Running', 'Failed');
+
 CREATE TABLE queue
-(
-    id BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY,
-    status INT NOT NULL,
-    message JSONB NOT NULL
-)
+    ( id BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY
+    , status QUEUE_STATUS NOT NULL DEFAULT 'Queued'
+    , message JSONB NOT NULL
+    );

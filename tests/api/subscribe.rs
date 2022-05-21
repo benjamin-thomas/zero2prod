@@ -29,7 +29,7 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
         let row = sqlx::query!(
             r#"
             SELECT COUNT(*)
-            FROM queue WHERE status = 0
+            FROM queue WHERE status = 'Queued'
             AND message->'SendConfirmEmail'->>'email' = 'john.doe@example.com';
             "#,
         )

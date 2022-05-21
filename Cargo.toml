@@ -13,6 +13,7 @@ name = "zero2prod"
 [dependencies]
 actix-web = "4"
 serde = { version = "1.0.137", features = ["derive"] }
+serde_json = "1.0.81"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 sqlx = { version = "0.5.13", features = [
     "runtime-actix-rustls",
@@ -20,6 +21,7 @@ sqlx = { version = "0.5.13", features = [
     "postgres",
     "chrono",
     "migrate",
+    "json",
 ] }
 uuid = { version = "1.0.0", features = ["v4"] }
 tracing = { version = "0.1.34", features = ["log"] }
