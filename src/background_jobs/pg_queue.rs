@@ -32,7 +32,7 @@ struct PgJob {
 impl From<PgJob> for Job {
     fn from(item: PgJob) -> Self {
         Job {
-            id: item.id,
+            id: u64::try_from(item.id).expect("number conversion failed!"),
             status: item.status.into(),
             message: item.message.0,
         }

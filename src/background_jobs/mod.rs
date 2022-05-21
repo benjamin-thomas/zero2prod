@@ -33,7 +33,7 @@ pub trait Queue: Send + Sync {
 
 #[derive(Serialize, Deserialize)]
 pub struct Job {
-    pub id: i64,
+    pub id: u64,
     pub status: JobStatus,
     pub message: Message,
 }
