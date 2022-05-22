@@ -65,7 +65,7 @@ impl Queue for PgQueue {
         Ok(())
     }
 
-    async fn pull(&self, _batch_size: u8) -> Result<Vec<Job>, Box<dyn std::error::Error>> {
+    async fn pull(&self, batch_size: u8) -> Result<Vec<Job>, Box<dyn std::error::Error>> {
         // TODO: I'll have to investigate if not dealing with TIMESTAMPTZ makes sens
         //
         // NOTE: I see no reason not to hard-code failed_attempts at this point
@@ -91,13 +91,14 @@ impl Queue for PgQueue {
                   priority DESC
                 , scheduled_at ASC
 
-              LIMIT 5
+              LIMIT $2
 
                 FOR UPDATE SKIP LOCKED
             )
             RETURNING id, message AS "message: Json<Message>", status AS "status: PgJobStatus"
             "#,
-            PgJobStatus::Queued as PgJobStatus // keeping for ref, I could just hard-code the value...
+            PgJobStatus::Queued as PgJobStatus, // keeping for ref, I could just hard-code the value...
+            i64::from(batch_size)
         )
         .fetch_all(&self.pool)
         .await?;
@@ -107,9 +108,12 @@ impl Queue for PgQueue {
     }
 
     async fn delete_job(&self, job_id: u64) -> Result<(), Box<dyn std::error::Error>> {
-        sqlx::query!(r#"DELETE FROM queue WHERE id = $1"#, i64::try_from(job_id)?)
-            .execute(&self.pool)
-            .await?;
+        sqlx::query!(
+            r#"DELETE FROM queue WHERE id = $1"#,
+            i64::try_from(job_id).expect("number conversion failed!!")
+        )
+        .execute(&self.pool)
+        .await?;
 
         Ok(())
     }
@@ -123,7 +127,7 @@ impl Queue for PgQueue {
                  , updated_at = current_timestamp AT TIME ZONE 'UTC'
              WHERE id = $1
             "#,
-            i64::try_from(job_id)?
+            i64::try_from(job_id).expect("number conversion failed!!")
         )
         .execute(&self.pool)
         .await?;
