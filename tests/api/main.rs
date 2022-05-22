@@ -47,6 +47,7 @@ async fn startup(with_tx: bool) -> (PgPool, SocketAddr) {
     };
 
     let queue = PgQueue::new(pool.clone());
+    let queue = actix_web::web::Data::new(queue);
 
     let listener = TcpListener::bind("localhost:0").expect("Failed to create listener");
     let socket = listener.local_addr().unwrap();
