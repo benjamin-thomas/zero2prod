@@ -66,22 +66,38 @@ impl Queue for PgQueue {
     }
 
     async fn pull(&self, _batch_size: u8) -> Result<Vec<Job>, Box<dyn std::error::Error>> {
+        // TODO: I'll have to investigate if not dealing with TIMESTAMPTZ makes sens
+        //
+        // NOTE: I see no reason not to hard-code failed_attempts at this point
+        //
+        // NOTE: Since the queue is meant to stay mostly empty, it's not clear whether creating indices
+        //       would improve or hurt performance.
         let jobs: Vec<PgJob> = sqlx::query_as!(
             PgJob,
             r#"
             UPDATE queue
-            SET status = 'Running'
+               SET status = 'Running'
+                 , updated_at = current_timestamp AT TIME ZONE 'UTC'
+
             WHERE id IN (
                 SELECT id
-                FROM queue
-                WHERE status = $1
-                ORDER BY id
-                LIMIT 5
+                  FROM queue
+
+                 WHERE status = $1
+                   AND scheduled_at <= current_timestamp AT TIME ZONE 'UTC'
+                   AND failed_attempts <= 3
+
+              ORDER BY
+                  priority DESC
+                , scheduled_at ASC
+
+              LIMIT 5
+
                 FOR UPDATE SKIP LOCKED
             )
             RETURNING id, message AS "message: Json<Message>", status AS "status: PgJobStatus"
             "#,
-            PgJobStatus::Queued as PgJobStatus
+            PgJobStatus::Queued as PgJobStatus // keeping for ref, I could just hard-code the value...
         )
         .fetch_all(&self.pool)
         .await?;
@@ -100,7 +116,13 @@ impl Queue for PgQueue {
 
     async fn fail_job(&self, job_id: u64) -> Result<(), Box<dyn std::error::Error>> {
         sqlx::query!(
-            r#"UPDATE queue SET status = 'Failed' WHERE id = $1"#,
+            r#"
+            UPDATE queue
+               SET status = 'Failed'
+                 , failed_attempts = failed_attempts + 1
+                 , updated_at = current_timestamp AT TIME ZONE 'UTC'
+             WHERE id = $1
+            "#,
             i64::try_from(job_id)?
         )
         .execute(&self.pool)
