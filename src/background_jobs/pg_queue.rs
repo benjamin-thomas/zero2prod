@@ -1,7 +1,7 @@
 use crate::background_jobs::Job;
 use async_trait::async_trait;
 use serde_json::json;
-use sqlx::{types::Json, Error, Pool, Postgres};
+use sqlx::{types::Json, Pool, Postgres};
 
 use super::{JobStatus, Message, Queue};
 
@@ -51,7 +51,7 @@ impl PgQueue {
 
 #[async_trait]
 impl Queue for PgQueue {
-    async fn push(&self, job: Message) -> Result<(), Error> {
+    async fn push(&self, job: Message) -> Result<(), Box<dyn std::error::Error>> {
         let message = json!(job);
 
         sqlx::query!(
@@ -65,7 +65,7 @@ impl Queue for PgQueue {
         Ok(())
     }
 
-    async fn pull(&self, _batch_size: u8) -> Result<Vec<Job>, Error> {
+    async fn pull(&self, _batch_size: u8) -> Result<Vec<Job>, Box<dyn std::error::Error>> {
         let jobs: Vec<PgJob> = sqlx::query_as!(
             PgJob,
             r#"

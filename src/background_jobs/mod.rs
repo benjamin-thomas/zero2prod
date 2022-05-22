@@ -23,8 +23,8 @@ pub enum JobStatus {
 
 #[async_trait]
 pub trait Queue: Send + Sync {
-    async fn push(&self, job: Message) -> Result<(), sqlx::Error>; // don't know how to return generic errors yet
-    async fn pull(&self, batch_size: u8) -> Result<Vec<Job>, sqlx::Error>;
+    async fn push(&self, job: Message) -> Result<(), Box<dyn std::error::Error>>;
+    async fn pull(&self, batch_size: u8) -> Result<Vec<Job>, Box<dyn std::error::Error>>;
 
     async fn delete_job(&self, job_id: u64) -> Result<(), Box<dyn std::error::Error>>;
     async fn fail_job(&self, job_id: u64) -> Result<(), Box<dyn std::error::Error>>;

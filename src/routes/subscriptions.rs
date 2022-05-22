@@ -58,7 +58,7 @@ async fn insert_subscriber(
     pool: &PgPool,
     queue: &PgQueue,
     new_subscriber: NewSubscriber,
-) -> Result<(), sqlx::Error> {
+) -> Result<(), Box<dyn std::error::Error>> {
     sqlx::query!(
         r#"
         INSERT INTO subscriptions (email, name, subscribed_at, status)
