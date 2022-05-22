@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use serde_json::json;
 use sqlx::{types::Json, Error, Pool, Postgres};
 
-use super::{Message, Queue, JobStatus};
+use super::{JobStatus, Message, Queue};
 
 #[derive(sqlx::Type)]
 #[sqlx(type_name = "QUEUE_STATUS")]
@@ -80,12 +80,32 @@ impl Queue for PgQueue {
                 FOR UPDATE SKIP LOCKED
             )
             RETURNING id, message AS "message: Json<Message>", status AS "status: PgJobStatus"
-            "#, PgJobStatus::Queued as PgJobStatus
+            "#,
+            PgJobStatus::Queued as PgJobStatus
         )
         .fetch_all(&self.pool)
         .await?;
 
         let jobs = jobs.into_iter().map(Into::into).collect();
         Ok(jobs)
+    }
+
+    async fn delete_job(&self, job_id: u64) -> Result<(), Box<dyn std::error::Error>> {
+        sqlx::query!(r#"DELETE FROM queue WHERE id = $1"#, i64::try_from(job_id)?)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
+    }
+
+    async fn fail_job(&self, job_id: u64) -> Result<(), Box<dyn std::error::Error>> {
+        sqlx::query!(
+            r#"UPDATE queue SET status = 'Failed' WHERE id = $1"#,
+            i64::try_from(job_id)?
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
     }
 }

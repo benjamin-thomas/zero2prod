@@ -26,9 +26,8 @@ pub trait Queue: Send + Sync {
     async fn push(&self, job: Message) -> Result<(), sqlx::Error>; // don't know how to return generic errors yet
     async fn pull(&self, batch_size: u8) -> Result<Vec<Job>, sqlx::Error>;
 
-    // async fn delete_job(&self, job_id: u32) -> Result<(), Box<dyn Error>>;
-    // async fn fail_job(&self, job_id: u32) -> Result<(), Box<dyn Error>>;
-    // async fn clear(&self) -> Result<(), Box<dyn Error>>;
+    async fn delete_job(&self, job_id: u64) -> Result<(), Box<dyn std::error::Error>>;
+    async fn fail_job(&self, job_id: u64) -> Result<(), Box<dyn std::error::Error>>;
 }
 
 #[derive(Serialize, Deserialize)]
