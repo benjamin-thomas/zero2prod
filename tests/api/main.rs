@@ -45,13 +45,13 @@ async fn startup(with_tx: bool) -> (PgPool, SocketAddr) {
         init_solo_pool().await
     };
 
-    let queue = PgQueue::new(pool.clone());
-    let queue = actix_web::web::Data::new(queue);
+    let pg_queue = PgQueue::new(pool.clone());
+    let pg_queue = pg_queue;
 
     let listener = TcpListener::bind("localhost:0").expect("Failed to create listener");
     let socket = listener.local_addr().unwrap();
 
-    let server = startup::run(listener, pool.clone(), queue).expect("Could not start server");
+    let server = startup::run(listener, pool.clone(), pg_queue).expect("Could not start server");
 
     tokio::spawn(server);
 

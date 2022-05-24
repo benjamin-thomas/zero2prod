@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::domain::subscriber_email::SubscriberEmail;
 use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
 
@@ -30,21 +32,28 @@ impl EmailClient {
             .body("Rust test!".to_string())
             .expect("could not build email");
 
-        let credentials = Credentials::new(self.from_addr.clone(), "smtp_password".to_string());
+        let credentials = Credentials::new(self.from_addr.clone(), self.password().to_string());
 
-        let mailer = SmtpTransport::relay(self.smtp_host.as_str())
+        let mailer = SmtpTransport::starttls_relay(self.smtp_host.as_str())
             .unwrap()
             .credentials(credentials)
+            .timeout(Some(Duration::from_millis(5000)))
             .build();
 
-        // mailer.send(&email)
-        // assert!(mailer.send(&email).is_ok());
-        match mailer.send(&email) {
-            Ok(_) => Ok(()),
-            Err(_) => Err(format!("failed to send email for: {}", recipient.as_ref())),
+        // FIXME: don't know how to return errors more generically
+        let res = mailer.send(&email);
+        // println!("res:{:?}", &res);
+        match res {
+            Ok(_) => {
+                println!("Successfully sent email to: {}", recipient.as_ref());
+                Ok(())
+            }
+            Err(err) => Err(format!(
+                "failed to send email for: {}\nerr:{}",
+                recipient.as_ref(),
+                err,
+            )),
         }
-
-        // Ok(())
     }
 
     pub fn smtp_host(&self) -> &str {

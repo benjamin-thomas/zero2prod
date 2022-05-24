@@ -1,7 +1,13 @@
-use crate::background_jobs::Job;
+use std::time::Duration;
+
+use crate::{
+    background_jobs::Job, config::must_env, domain::subscriber_email::SubscriberEmail,
+    email_client::EmailClient,
+};
 use async_trait::async_trait;
 use serde_json::json;
 use sqlx::{types::Json, Pool, Postgres};
+use tokio_stream::StreamExt;
 
 use super::{JobStatus, Message, Queue};
 
@@ -133,5 +139,63 @@ impl Queue for PgQueue {
         .await?;
 
         Ok(())
+    }
+}
+
+// Set to run max 100 jobs per second (so about 8M jobs per day)
+pub async fn run_worker(pg_queue: PgQueue) {
+    let smtp_host = must_env("SMTP_HOST");
+    let smtp_sender = must_env("SMTP_SENDER");
+    let smtp_password = must_env("SMTP_PASSWORD");
+
+    let email_client = EmailClient::new(smtp_host, smtp_sender, smtp_password);
+
+    loop {
+        handle_batch(&pg_queue, &email_client).await;
+
+        // Poll a batch (100 jobs) every 1s
+        tokio::time::sleep(Duration::from_millis(1000)).await;
+    }
+}
+
+pub async fn run_worker_once(pg_queue: PgQueue) {
+    let smtp_host = must_env("SMTP_HOST");
+    let smtp_sender = must_env("SMTP_SENDER");
+    let smtp_password = must_env("SMTP_PASSWORD");
+
+    let email_client = EmailClient::new(smtp_host, smtp_sender, smtp_password);
+
+    handle_batch(&pg_queue, &email_client).await;
+}
+
+async fn handle_batch(pg_queue: &PgQueue, email_client: &EmailClient) {
+    let jobs = match pg_queue.pull(100).await {
+        Ok(jobs) => jobs,
+        Err(err) => {
+            println!("Failed to pull job: {}", err);
+            println!("Will retry in 10s");
+            std::thread::sleep(Duration::from_millis(10000));
+            Vec::new() // do not use early `return` or run_worker will never run again
+        }
+    };
+    let mut stream = tokio_stream::iter(jobs);
+    while let Some(job) = stream.next().await {
+        println!("Handling job #{}", job.id);
+        match job.message {
+            Message::SendConfirmEmail { email } => {
+                let email = SubscriberEmail::parse(email).unwrap();
+                let res = email_client
+                    .send_email(email, "hello", "html bogus", "txt bogus")
+                    .await;
+
+                match res {
+                    Ok(_) => pg_queue.delete_job(job.id).await.unwrap(),
+                    Err(err) => {
+                        println!("Failed job #{}! {}", job.id, err);
+                        pg_queue.fail_job(job.id).await.unwrap()
+                    }
+                }
+            }
+        }
     }
 }

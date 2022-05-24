@@ -1,6 +1,7 @@
 use crate::background_jobs::pg_queue::PgQueue;
 use crate::routes::{health_check, subscribe};
 use actix_web::dev::Server;
+use actix_web::web::Data;
 use actix_web::{web, App, HttpServer};
 use sqlx::PgPool;
 use std::net::TcpListener;
@@ -9,10 +10,12 @@ use tracing_actix_web::TracingLogger;
 pub fn run(
     listener: TcpListener,
     pg_pool: PgPool,
-    pg_queue: web::Data<PgQueue>,
+    pg_queue: PgQueue,
 ) -> Result<Server, std::io::Error> {
     // Wrap the connection in a smart pointer
     let pg_pool = web::Data::new(pg_pool);
+
+    let pg_queue = Data::new(pg_queue);
 
     // Capture `connection` from the surrounding environment
     let server = HttpServer::new(move || {
