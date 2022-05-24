@@ -1,10 +1,11 @@
-use std::time::{Duration, UNIX_EPOCH};
+use std::time::Duration;
 
 use actix_web::web::Data;
 use sqlx::PgPool;
 use tokio_stream::StreamExt;
 use zero2prod::background_jobs::pg_queue::PgQueue;
-use zero2prod::background_jobs::{Job, Message, Queue};
+use zero2prod::background_jobs::{Message, Queue};
+use zero2prod::domain::subscriber_email::SubscriberEmail;
 use zero2prod::email_client::EmailClient;
 use zero2prod::{run, telemetry};
 
@@ -13,10 +14,6 @@ async fn main() -> std::io::Result<()> {
     telemetry::init("zero2prod");
 
     let bind = zero2prod::config::must_env("BIND");
-    let smtp_host = zero2prod::config::must_env("SMTP_HOST");
-    let smtp_sender = zero2prod::config::must_env("SMTP_SENDER");
-
-    let email_client = EmailClient::new(smtp_host, smtp_sender).expect("EmailClient init failed");
 
     let listener = std::net::TcpListener::bind(&bind)
         .unwrap_or_else(|_| panic!("Could not bind to: {}", bind));
@@ -33,12 +30,19 @@ async fn main() -> std::io::Result<()> {
     tokio::spawn(async move { run_worker(worker_queue).await });
 
     println!("\n--> Starting server on: \x1b[1;34m{}\x1b[1;m", addr);
-    return run(listener, pg_pool, pg_queue, email_client)?.await;
+    return run(listener, pg_pool, pg_queue)?.await;
 }
 
 // Set to run max 100 jobs per second (so about 8M jobs per day)
 async fn run_worker(pg_queue: Data<PgQueue>) {
+    let smtp_host = zero2prod::config::must_env("SMTP_HOST");
+    let smtp_sender = zero2prod::config::must_env("SMTP_SENDER");
+    let smtp_password = zero2prod::config::must_env("SMTP_PASSWORD");
+
+    let email_client = EmailClient::new(smtp_host, smtp_sender, smtp_password);
+
     loop {
+        println!("PULLING!");
         let jobs = match pg_queue.pull(100).await {
             Ok(jobs) => jobs,
             Err(err) => {
@@ -51,36 +55,22 @@ async fn run_worker(pg_queue: Data<PgQueue>) {
 
         let mut stream = tokio_stream::iter(jobs);
         while let Some(job) = stream.next().await {
-            handle_job(pg_queue.clone(), job).await;
+            println!("Handling job #{}", job.id);
+            match job.message {
+                Message::SendConfirmEmail { email } => {
+                    let email = SubscriberEmail::parse(email).unwrap();
+                    match email_client
+                        .send_email(email, "hello", "html bogus", "txt bogus")
+                        .await
+                    {
+                        Ok(_) => pg_queue.delete_job(job.id).await.unwrap(),
+                        Err(_) => pg_queue.fail_job(job.id).await.unwrap(),
+                    }
+                }
+            }
         }
 
         // Poll a batch (100 jobs) every 1s
         tokio::time::sleep(Duration::from_millis(1000)).await;
-    }
-}
-
-async fn handle_job(pg_queue: Data<PgQueue>, job: Job) {
-    match job.message {
-        Message::SendConfirmEmail { email } => match send_email_fake(email) {
-            Ok(_) => pg_queue.delete_job(job.id).await.unwrap(),
-            Err(_) => pg_queue.fail_job(job.id).await.unwrap(),
-        },
-    }
-}
-
-enum SendEmailError {
-    BogusError,
-}
-
-fn send_email_fake(email: String) -> Result<(), SendEmailError> {
-    let now = std::time::SystemTime::now();
-    let since_epoch = now.duration_since(UNIX_EPOCH).unwrap();
-
-    if since_epoch.as_secs() % 10 == 0 {
-        println!("FAILED to send email to: {}!", email);
-        Err(SendEmailError::BogusError)
-    } else {
-        println!("Sent email to: {}!", email);
-        Ok(())
     }
 }
