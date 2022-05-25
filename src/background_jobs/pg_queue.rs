@@ -183,6 +183,10 @@ async fn handle_batch(pg_queue: &PgQueue, email_client: &EmailClient) {
         println!("Handling job #{}", job.id);
         match job.message {
             Message::SendConfirmEmail { email } => {
+                /*
+                    NOTE: HTML email example is here (for later)
+                        https://github.com/lettre/lettre/blob/master/examples/maud_html.rs
+                */
                 let email = SubscriberEmail::parse(email).unwrap();
                 let res = email_client
                     .send_email(email, "hello", "html bogus", "txt bogus")
