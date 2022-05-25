@@ -43,6 +43,8 @@ validator = "0.15.0"
 lettre = "0.10.0-rc.6"
 async-trait = "0.1.53"
 tokio-stream = "0.1.8"
+askama = { version = "0.11.1", features = ["with-actix-web"] }
+askama_actix = "0.13.0"
 
 # Latest realeased version (0.23.0) is not compatible with ActixWeb 4.
 # See: https://github.com/lambda-fairy/maud/pull/331

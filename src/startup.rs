@@ -26,6 +26,18 @@ async fn hello_maud(name: web::Path<String>) -> actix_web::Result<maud::Markup> 
     })
 }
 
+#[derive(askama::Template)]
+#[template(path = "hello.html")]
+struct HelloTemplate<'a> {
+    name: &'a str,
+}
+
+async fn hello_askama(name: web::Path<String>) -> impl actix_web::Responder {
+    // let name = "world".to_owned();
+    askama_actix::TemplateToResponse::to_response(&HelloTemplate { name: &name })
+    // HelloTemplate { name: &name }.to_response() // I can get this nicer syntax if I use/import TemplateToResponse
+}
+
 pub fn run(
     listener: TcpListener,
     pg_pool: PgPool,
@@ -45,6 +57,7 @@ pub fn run(
             .route("/hello2/{name}", web::get().to(hello2))
             .service(hello1)
             .route("/hello3/{name}", web::get().to(hello_maud))
+            .route("/hello4/{name}", web::get().to(hello_askama))
             // .service(hello_maud)
             // Get a pointer copy and attach it to the application state
             .app_data(pg_pool.clone())
