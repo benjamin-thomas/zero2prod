@@ -44,5 +44,12 @@ lettre = "0.10.0-rc.6"
 async-trait = "0.1.53"
 tokio-stream = "0.1.8"
 
+# Latest realeased version (0.23.0) is not compatible with ActixWeb 4.
+# See: https://github.com/lambda-fairy/maud/pull/331
+[dependencies.maud]
+git = "https://github.com/lambda-fairy/maud"
+rev = "e6787cd62165a075c7f16a32f8bbacc398f52d13"
+features = ["actix-web"]
+
 [dev-dependencies]
 reqwest = "0.11.10"
